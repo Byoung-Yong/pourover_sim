@@ -14,7 +14,14 @@ from scripts.serve_web_simulator import defaults_payload  # noqa: E402
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self._send_json(defaults_payload())
+        try:
+            payload = defaults_payload()
+            # Vercel serverless functions are better suited to the small grid.
+            # Users can still choose the standard/fine grid manually.
+            payload["default_payload"]["grid"] = "fast"
+            self._send_json(payload)
+        except Exception as exc:
+            self._send_json({"ok": False, "error": f"Defaults failed: {exc}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def _send_json(self, payload, status=HTTPStatus.OK):
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")

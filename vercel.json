@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": null,
-  "outputDirectory": "web"
+  "outputDirectory": "web",
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 60
+    }
+  }
 }
