@@ -86,13 +86,13 @@
 
           <div class="cup-summary">
             <div id="brewVisual" class="beaker-readout" aria-label="Cumulative brewed coffee">
-              <svg class="beaker-cup" viewBox="0 0 190 245" role="img" aria-label="V60 dripper over graduated cup">
+              <svg class="beaker-cup" viewBox="0 0 190 268" role="img" aria-label="V60 dripper over graduated cup">
                 <defs>
                   <clipPath id="v60Clip">
                     <path d="M24 25 H142 L104 103 H62 Z" />
                   </clipPath>
                   <clipPath id="beakerClip">
-                    <path d="M42 123 H128 L119 221 Q118 229 110 229 H60 Q52 229 51 221 Z" />
+                    <path d="M42 145 H128 L119 243 Q118 251 110 251 H60 Q52 251 51 243 Z" />
                   </clipPath>
                   <linearGradient id="beakerGlass" x1="0" x2="1" y1="0" y2="1">
                     <stop offset="0" stop-color="#ffffff" stop-opacity="0.88" />
@@ -112,21 +112,22 @@
                   </g>
                   <path class="v60-tip" d="M77 104 H89 L86 114 Q84 119 83 119 Q81 119 79 114 Z" />
                 </g>
+                <path id="dripStream" class="coffee-stream" opacity="0" aria-hidden="true" d="M83 116 C81 126 82 136 83 146 C84 156 84 164 83 174" />
                 <g class="beaker-handle" aria-hidden="true">
-                  <path d="M128 150 H152 Q167 150 167 168 V193 Q167 211 152 211 H122" />
+                  <path d="M128 172 H152 Q167 172 167 190 V215 Q167 233 152 233 H122" />
                 </g>
                 <g class="beaker-body">
-                  <path class="beaker-glass" d="M38 123 H131 L122 223 Q121 233 110 233 H60 Q49 233 48 223 L38 123 Z" />
+                  <path class="beaker-glass" d="M38 145 H131 L122 245 Q121 255 110 255 H60 Q49 255 48 245 L38 145 Z" />
                   <g clip-path="url(#beakerClip)">
-                    <rect id="cupFill" class="beaker-fill" x="42" y="123" width="86" height="106" />
-                    <path class="beaker-shine" d="M92 124 H122 L114 227 H93 Z" />
+                    <rect id="cupFill" class="beaker-fill" x="42" y="145" width="86" height="106" />
+                    <path class="beaker-shine" d="M92 146 H122 L114 249 H93 Z" />
                   </g>
                   <g class="beaker-graduations" aria-hidden="true">
-                    <path d="M52 143 H82" />
-                    <path d="M52 161 H72" />
-                    <path d="M52 179 H82" />
-                    <path d="M52 197 H72" />
-                    <path d="M52 215 H82" />
+                    <path d="M52 165 H82" />
+                    <path d="M52 183 H72" />
+                    <path d="M52 201 H82" />
+                    <path d="M52 219 H72" />
+                    <path d="M52 237 H82" />
                   </g>
                 </g>
               </svg>

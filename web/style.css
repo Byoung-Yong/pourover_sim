@@ -271,11 +271,12 @@ input[type="range"] {
 }
 
 .beaker-readout {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 150px 170px;
   align-items: center;
   justify-content: center;
   gap: 18px;
+  width: 338px;
   padding: 0 14px 4px;
   background: #ffffff;
 }
@@ -283,7 +284,7 @@ input[type="range"] {
 .beaker-cup {
   display: block;
   width: 150px;
-  height: 193px;
+  height: 212px;
   flex: 0 0 auto;
 }
 
@@ -315,6 +316,16 @@ input[type="range"] {
   stroke: #718393;
   stroke-width: 2;
   stroke-linejoin: round;
+}
+
+.coffee-stream {
+  fill: none;
+  stroke: #7a4b26;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 18 10;
+  transition: opacity 120ms linear;
+  animation: coffee-flow 0.65s linear infinite;
 }
 
 .beaker-fill {
@@ -355,6 +366,7 @@ input[type="range"] {
   display: grid;
   gap: 4px;
   justify-items: start;
+  width: 170px;
 }
 
 .beaker-text span {
@@ -366,6 +378,16 @@ input[type="range"] {
 .beaker-text strong {
   color: var(--ink);
   font-size: 30px;
+  min-width: 116px;
+}
+
+@keyframes coffee-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -28;
+  }
 }
 
 .chart-wrap {

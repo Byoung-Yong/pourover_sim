@@ -32,10 +32,7 @@ const elements = {
   brewVisual: document.getElementById("brewVisual"),
   visualTime: document.getElementById("visualTime"),
   visualPhase: document.getElementById("visualPhase"),
-  pourStream: document.getElementById("pourStream"),
   dripStream: document.getElementById("dripStream"),
-  bedFill: document.getElementById("bedFill"),
-  poolFill: document.getElementById("poolFill"),
   cupFill: document.getElementById("cupFill"),
   chart: document.getElementById("chart"),
 };
@@ -323,6 +320,7 @@ function createBrewAnimation(dom) {
     dom.visualPhase.textContent = "Cup accumulation";
     dom.visualTime.textContent = "0.0 g";
     setFill(dom.cupFill, 0);
+    setDrip(0);
     tick(animation.startedAt);
   }
 
@@ -333,12 +331,14 @@ function createBrewAnimation(dom) {
     renderFromPoint(finalPoint, data.summary.total_water_g);
     dom.visualTime.textContent = `${format(finalPoint.cup_water_g, 1)} g`;
     dom.visualPhase.textContent = "Final cup amount";
+    setDrip(0);
   }
 
   function fail() {
     stop();
     dom.brewVisual.dataset.state = "error";
     dom.visualPhase.textContent = "Simulation stopped";
+    setDrip(0);
   }
 
   function stop() {
@@ -363,11 +363,19 @@ function createBrewAnimation(dom) {
     dom.visualTime.textContent = `${cupWater.toFixed(1)} g`;
     dom.visualPhase.textContent = activePour ? "Cup filling" : "Cup accumulation";
     setFill(dom.cupFill, cupWater / totalWater);
+    setDrip(cupWater > 0 || activePour ? 1 : 0);
   }
 
   function renderFromPoint(point, totalWater) {
     if (!point) return;
     setFill(dom.cupFill, point.cup_water_g / Math.max(totalWater, 1));
+  }
+
+  function setDrip(opacity) {
+    if (!dom.dripStream) return;
+    const value = opacity.toFixed(2);
+    dom.dripStream.style.opacity = value;
+    dom.dripStream.setAttribute("opacity", value);
   }
 
   return { start, finish, fail };
