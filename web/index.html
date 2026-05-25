@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Filter Coffee Process Simulator</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=2" />
   </head>
   <body>
     <main class="app">
@@ -76,9 +76,65 @@
             <article class="metric"><span>Cup water</span><strong id="cupWater">--</strong></article>
             <article class="metric"><span>Retained water</span><strong id="retainedWater">--</strong></article>
             <article class="metric"><span>Drawdown</span><strong id="drawdown">--</strong></article>
+          </div>
+
+          <div class="secondary-metrics">
             <article class="metric"><span>TDS</span><strong id="tds">--</strong></article>
             <article class="metric"><span>Extraction yield</span><strong id="ey">--</strong></article>
             <article class="metric"><span>Bed height</span><strong id="bedHeight">--</strong></article>
+          </div>
+
+          <div class="cup-summary">
+            <div id="brewVisual" class="beaker-readout" aria-label="Cumulative brewed coffee">
+              <svg class="beaker-cup" viewBox="0 0 190 245" role="img" aria-label="V60 dripper over graduated cup">
+                <defs>
+                  <clipPath id="v60Clip">
+                    <path d="M24 25 H142 L104 103 H62 Z" />
+                  </clipPath>
+                  <clipPath id="beakerClip">
+                    <path d="M42 123 H128 L119 221 Q118 229 110 229 H60 Q52 229 51 221 Z" />
+                  </clipPath>
+                  <linearGradient id="beakerGlass" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0" stop-color="#ffffff" stop-opacity="0.88" />
+                    <stop offset="1" stop-color="#dff4fa" stop-opacity="0.8" />
+                  </linearGradient>
+                  <linearGradient id="beakerCoffee" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" stop-color="#a06031" />
+                    <stop offset="1" stop-color="#56301d" />
+                  </linearGradient>
+                </defs>
+                <g class="v60-dripper" aria-hidden="true">
+                  <path class="v60-paper" d="M22 24 H144 L105 105 H61 Z" />
+                  <ellipse class="v60-rim" cx="83" cy="25" rx="62" ry="8" />
+                  <g clip-path="url(#v60Clip)">
+                    <path class="v60-bed" d="M32 48 Q83 40 134 48 L105 104 H61 Z" />
+                    <path class="v60-ribs" d="M45 34 L64 103 M66 31 L73 104 M83 29 L83 105 M101 31 L94 104 M122 34 L103 103" />
+                  </g>
+                  <path class="v60-tip" d="M77 104 H89 L86 114 Q84 119 83 119 Q81 119 79 114 Z" />
+                </g>
+                <g class="beaker-handle" aria-hidden="true">
+                  <path d="M128 150 H152 Q167 150 167 168 V193 Q167 211 152 211 H122" />
+                </g>
+                <g class="beaker-body">
+                  <path class="beaker-glass" d="M38 123 H131 L122 223 Q121 233 110 233 H60 Q49 233 48 223 L38 123 Z" />
+                  <g clip-path="url(#beakerClip)">
+                    <rect id="cupFill" class="beaker-fill" x="42" y="123" width="86" height="106" />
+                    <path class="beaker-shine" d="M92 124 H122 L114 227 H93 Z" />
+                  </g>
+                  <g class="beaker-graduations" aria-hidden="true">
+                    <path d="M52 143 H82" />
+                    <path d="M52 161 H72" />
+                    <path d="M52 179 H82" />
+                    <path d="M52 197 H72" />
+                    <path d="M52 215 H82" />
+                  </g>
+                </g>
+              </svg>
+              <div class="beaker-text">
+                <span id="visualPhase">Cup accumulation</span>
+                <strong id="visualTime">0.0 g</strong>
+              </div>
+            </div>
           </div>
 
           <div class="diagnostics">

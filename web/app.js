@@ -29,8 +29,18 @@ const elements = {
   solidsCheck: document.getElementById("solidsCheck"),
   cupCheck: document.getElementById("cupCheck"),
   nonnegativeCheck: document.getElementById("nonnegativeCheck"),
+  brewVisual: document.getElementById("brewVisual"),
+  visualTime: document.getElementById("visualTime"),
+  visualPhase: document.getElementById("visualPhase"),
+  pourStream: document.getElementById("pourStream"),
+  dripStream: document.getElementById("dripStream"),
+  bedFill: document.getElementById("bedFill"),
+  poolFill: document.getElementById("poolFill"),
+  cupFill: document.getElementById("cupFill"),
   chart: document.getElementById("chart"),
 };
+
+const brewAnimation = createBrewAnimation(elements);
 
 async function init() {
   bindEvents();
@@ -118,20 +128,24 @@ function buildPayload() {
 }
 
 async function runSimulation() {
+  const payload = buildPayload();
   setStatus("Running...");
+  brewAnimation.start(payload);
   elements.runButton.disabled = true;
   try {
     const response = await fetch("/api/simulate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildPayload()),
+      body: JSON.stringify(payload),
     });
     const data = await readJsonResponse(response);
     if (!response.ok || !data.ok) throw new Error(data.error || "Simulation failed.");
     state.lastResult = data;
     renderResult(data);
+    brewAnimation.finish(data);
     setStatus("Complete.");
   } catch (error) {
+    brewAnimation.fail();
     setStatus(error.message, true);
   } finally {
     elements.runButton.disabled = false;
@@ -156,7 +170,7 @@ function renderResult(data) {
     ? `${format(summary.drawdown_time_s, 0)} s`
     : "not reached";
   elements.tds.textContent = `${format(summary.tds_percent, 2)} %`;
-  elements.ey.textContent = `${format(summary.extraction_yield_percent, 2)} %`;
+  elements.ey.textContent = `${format(summary.extraction_yield_percent, 1)} %`;
   elements.bedHeight.textContent = `${format(summary.bed_height_mm, 1)} mm`;
   renderCheck(elements.waterCheck, "Water balance", data.checks.water_balance_closed);
   renderCheck(elements.solidsCheck, "Solids balance", data.checks.solids_balance_closed);
@@ -284,6 +298,107 @@ function drawLegend(ctx, margin) {
     ctx.fillText(label, x + 36, y + 5);
     x += ctx.measureText(label).width + 74;
   }
+}
+
+function createBrewAnimation(dom) {
+  if (!dom.brewVisual) {
+    return {
+      start() {},
+      finish() {},
+      fail() {},
+    };
+  }
+
+  const animation = {
+    frame: null,
+    startedAt: 0,
+    payload: null,
+  };
+
+  function start(payload) {
+    stop();
+    animation.payload = normalizeBrewPayload(payload);
+    animation.startedAt = performance.now();
+    dom.brewVisual.dataset.state = "running";
+    dom.visualPhase.textContent = "Cup accumulation";
+    dom.visualTime.textContent = "0.0 g";
+    setFill(dom.cupFill, 0);
+    tick(animation.startedAt);
+  }
+
+  function finish(data) {
+    stop();
+    dom.brewVisual.dataset.state = "complete";
+    const finalPoint = data.time_series[data.time_series.length - 1];
+    renderFromPoint(finalPoint, data.summary.total_water_g);
+    dom.visualTime.textContent = `${format(finalPoint.cup_water_g, 1)} g`;
+    dom.visualPhase.textContent = "Final cup amount";
+  }
+
+  function fail() {
+    stop();
+    dom.brewVisual.dataset.state = "error";
+    dom.visualPhase.textContent = "Simulation stopped";
+  }
+
+  function stop() {
+    if (animation.frame !== null) cancelAnimationFrame(animation.frame);
+    animation.frame = null;
+  }
+
+  function tick(now) {
+    const elapsed = (now - animation.startedAt) / 1000;
+    const simTime = (elapsed * 28) % animation.payload.end_s;
+    renderPlannedState(simTime, animation.payload);
+    animation.frame = requestAnimationFrame(tick);
+  }
+
+  function renderPlannedState(time, payload) {
+    const totalWater = Math.max(payload.total_water_g, 1);
+    const pouredWater = pouredWaterAt(time, payload.pours);
+    const activePour = payload.pours.some((pour) => time >= pour.start_s && time <= pour.end_s);
+    const retainedCapacity = Math.max(payload.coffee_dose_g * 2.2, 1);
+    const cupWater = Math.max(0, pouredWater - retainedCapacity) * 0.82;
+
+    dom.visualTime.textContent = `${cupWater.toFixed(1)} g`;
+    dom.visualPhase.textContent = activePour ? "Cup filling" : "Cup accumulation";
+    setFill(dom.cupFill, cupWater / totalWater);
+  }
+
+  function renderFromPoint(point, totalWater) {
+    if (!point) return;
+    setFill(dom.cupFill, point.cup_water_g / Math.max(totalWater, 1));
+  }
+
+  return { start, finish, fail };
+}
+
+function normalizeBrewPayload(payload) {
+  return {
+    coffee_dose_g: payload.coffee_dose_g,
+    end_s: Math.max(payload.simulation_end_s, 1),
+    total_water_g: payload.pours.reduce((sum, pour) => sum + pour.water_g, 0),
+    pours: payload.pours.map((pour) => ({
+      ...pour,
+      duration_s: Math.max(pour.end_s - pour.start_s, 1),
+    })),
+  };
+}
+
+function pouredWaterAt(time, pours) {
+  return pours.reduce((sum, pour) => {
+    if (time <= pour.start_s) return sum;
+    if (time >= pour.end_s) return sum + pour.water_g;
+    return sum + pour.water_g * ((time - pour.start_s) / pour.duration_s);
+  }, 0);
+}
+
+function setFill(element, value) {
+  element.style.transform = `scaleY(${clamp(value, 0, 1).toFixed(3)})`;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function grindLanguageForD90(d90) {
