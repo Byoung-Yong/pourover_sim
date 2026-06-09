@@ -9,6 +9,7 @@ configuration.
 from __future__ import annotations
 
 from dataclasses import replace
+import math
 from pathlib import Path
 import sys
 
@@ -32,21 +33,21 @@ HYDRAULIC_MASS_PERCENTILE = 90.0
 CALIBRATED_COEFFICIENTS: dict[str, dict[str, float]] = {
     "coarse": {
         "retained_water_capacity_g_per_g_coffee": 1.75,
-        "hydraulic_correction_multiplier": 0.35,
-        "diffusion_rate_ref_s_inv": 0.0003576,
-        "surface_rate_ref_s_inv": 0.00447,
+        "hydraulic_correction_multiplier": 0.48,
+        "diffusion_rate_ref_s_inv": 0.000239580384784,
+        "surface_rate_ref_s_inv": 0.00299475480981,
     },
     "medium": {
         "retained_water_capacity_g_per_g_coffee": 2.00,
-        "hydraulic_correction_multiplier": 0.76,
-        "diffusion_rate_ref_s_inv": 0.0002304,
-        "surface_rate_ref_s_inv": 0.00288,
+        "hydraulic_correction_multiplier": 1.29,
+        "diffusion_rate_ref_s_inv": 0.000186021166749,
+        "surface_rate_ref_s_inv": 0.00232526458437,
     },
     "fine": {
-        "retained_water_capacity_g_per_g_coffee": 2.40,
-        "hydraulic_correction_multiplier": 1.30,
-        "diffusion_rate_ref_s_inv": 0.0001584,
-        "surface_rate_ref_s_inv": 0.00198,
+        "retained_water_capacity_g_per_g_coffee": 2.39,
+        "hydraulic_correction_multiplier": 2.95,
+        "diffusion_rate_ref_s_inv": 0.000102734343293,
+        "surface_rate_ref_s_inv": 0.00128417929116,
     },
 }
 
@@ -59,22 +60,47 @@ SHARED_CALIBRATED_COEFFICIENTS: dict[str, float] = {
 
 D90_CLOSURE_FITS: dict[str, dict[str, float]] = {
     "retained_water_capacity_g_per_g_coffee": {
-        "prefactor": 61.11149034580927,
-        "exponent": -0.4827707355049814,
+        "prefactor": 13.905546489543006,
+        "exponent": -0.27747161984196594,
+        "anchor_D90_um": (592.061439794, 1010.09723511, 1814.6060645),
+        "anchor_values": (2.39, 2.00, 1.75),
     },
     "hydraulic_correction_multiplier": {
-        "prefactor": 868950.9811332488,
-        "exponent": -1.9900729280450014,
+        "prefactor": 94024.81542501571,
+        "exponent": -1.6222737560768634,
+        "anchor_D90_um": (592.061439794, 1010.09723511, 1814.6060645),
+        "anchor_values": (2.95, 1.29, 0.48),
     },
     "diffusion_rate_ref_s_inv": {
-        "prefactor": 3.81942246388871e-08,
-        "exponent": 1.2378935207459285,
+        "prefactor": 9.097866127601769e-07,
+        "exponent": 0.7508053120777172,
+        "anchor_D90_um": (592.061439794, 1010.09723511, 1814.6060645),
+        "anchor_values": (0.000102734343293, 0.000186021166749, 0.000239580384784),
     },
     "surface_rate_ref_s_inv": {
-        "prefactor": 4.774278079860871e-07,
-        "exponent": 1.237893520745929,
+        "prefactor": 1.1372332659502172e-05,
+        "exponent": 0.7508053120777177,
+        "anchor_D90_um": (592.061439794, 1010.09723511, 1814.6060645),
+        "anchor_values": (0.00128417929116, 0.00232526458437, 0.00299475480981),
     },
 }
+
+
+def piecewise_log_interpolate(d90_um: float, anchors: tuple[float, ...], values: tuple[float, ...]) -> float:
+    """Log-linear interpolation through the calibrated data_2 D90 anchors."""
+
+    if len(anchors) != len(values):
+        raise ValueError("D90 closure anchors and values have different lengths.")
+    ordered = sorted(zip(anchors, values), key=lambda item: item[0])
+    if d90_um <= ordered[0][0]:
+        return ordered[0][1]
+    if d90_um >= ordered[-1][0]:
+        return ordered[-1][1]
+    for (x0, y0), (x1, y1) in zip(ordered[:-1], ordered[1:]):
+        if x0 <= d90_um <= x1:
+            weight = (math.log(d90_um) - math.log(x0)) / (math.log(x1) - math.log(x0))
+            return math.exp((1.0 - weight) * math.log(y0) + weight * math.log(y1))
+    raise ValueError("D90 is outside calibrated closure range.")
 
 
 def load_calibrated_psd_scenarios() -> tuple[Scenario, ...]:
@@ -182,7 +208,11 @@ def d90_closure_coefficients_for_scenario(
 
     d90_um = mass_percentile_diameter_um(scenario, HYDRAULIC_MASS_PERCENTILE)
     return {
-        key: values["prefactor"] * d90_um ** values["exponent"]
+        key: piecewise_log_interpolate(
+            d90_um,
+            values["anchor_D90_um"],
+            values["anchor_values"],
+        )
         for key, values in D90_CLOSURE_FITS.items()
     }
 

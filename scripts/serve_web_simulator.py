@@ -29,11 +29,13 @@ for path in (SRC, SCRIPTS):
 from calibrated_v60_model import (  # noqa: E402
     D90_CLOSURE_FITS,
     HYDRAULIC_MASS_PERCENTILE,
+    piecewise_log_interpolate,
 )
-from run_measured_psd_analysis import coarsen_mass_psd, mass_percentile_diameter_um  # noqa: E402
+from run_measured_psd_analysis import mass_percentile_diameter_um  # noqa: E402
 from v60_physics.parameters import (  # noqa: E402
     GeometryConfig,
     ModelConfig,
+    ParticleClass,
     PourSegment,
     Scenario,
     load_config,
@@ -277,7 +279,11 @@ def config_for_request(
 
 def coefficients_from_d90(d90_um: float) -> dict[str, float]:
     return {
-        key: values["prefactor"] * d90_um ** values["exponent"]
+        key: piecewise_log_interpolate(
+            d90_um,
+            values["anchor_D90_um"],
+            values["anchor_values"],
+        )
         for key, values in D90_CLOSURE_FITS.items()
     }
 
@@ -317,17 +323,28 @@ def finite_float(value: object, label: str, minimum: float | None = None, maximu
     return number
 
 
-def load_surface_psd() -> tuple[list[float], dict[str, list[float]]]:
-    sizes: list[float] = []
-    values = {name: [] for name in PSD_CLASSES}
+def load_mass_psd() -> dict[str, list[tuple[float, float]]]:
+    values: dict[str, list[tuple[float, float]]] = {name: [] for name in PSD_CLASSES}
     with PSD_FILE.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
-            size = float(row["size"])
-            sizes.append(size)
-            for name in PSD_CLASSES:
-                values[name].append(max(float(row[name]), 0.0))
-    return sizes, {name: normalize(vals) for name, vals in values.items()}
+            name = str(row["PSD_class"]).strip().lower()
+            if name not in values:
+                continue
+            diameter_um = float(row["diameter_um"])
+            mass_fraction = max(float(row["mass_fraction"]), 0.0)
+            if diameter_um > 0.0 and mass_fraction > 0.0:
+                values[name].append((diameter_um, mass_fraction))
+    normalized = {}
+    for name, bins in values.items():
+        if not bins:
+            raise ValueError(f"PSD contains no positive values for {name}.")
+        total = sum(fraction for _, fraction in bins)
+        normalized[name] = sorted(
+            [(diameter, fraction / total) for diameter, fraction in bins],
+            key=lambda item: item[0],
+        )
+    return normalized
 
 
 def normalize(values: list[float]) -> list[float]:
@@ -337,31 +354,31 @@ def normalize(values: list[float]) -> list[float]:
     return [value / total for value in values]
 
 
-def mass_bins_from_surface(sizes: list[float], surface: list[float]) -> list[tuple[float, float]]:
-    weights = [size * fraction for size, fraction in zip(sizes, surface)]
-    total = sum(weights)
-    return [(size, weight / total) for size, weight in zip(sizes, weights) if weight > 0.0]
-
-
-def scenario_from_surface(name: str, sizes: list[float], surface: list[float]) -> Scenario:
+def scenario_from_mass_bins(name: str, mass_bins: list[tuple[float, float]]) -> Scenario:
+    total = sum(fraction for _, fraction in mass_bins)
+    if total <= 0.0:
+        raise ValueError(f"PSD contains no positive mass fraction for {name}.")
     return Scenario(
         name=name,
-        particle_classes=coarsen_mass_psd(mass_bins_from_surface(sizes, surface), TARGET_CLASS_COUNT),
+        particle_classes=tuple(
+            ParticleClass(radius_um=0.5 * diameter, mass_fraction=fraction / total)
+            for diameter, fraction in sorted(mass_bins, key=lambda item: item[0])
+        ),
     )
 
 
 def psd_anchor_d90_values() -> dict[str, float]:
-    sizes, surfaces = load_surface_psd()
+    psds = load_mass_psd()
     return {
-        name: mass_percentile_diameter_um(scenario_from_surface(name, sizes, surfaces[name]), 90.0)
+        name: mass_percentile_diameter_um(scenario_from_mass_bins(name, psds[name]), 90.0)
         for name in PSD_CLASSES
     }
 
 
 def interpolated_scenario_for_d90(target_d90_um: float) -> tuple[Scenario, dict[str, object]]:
-    sizes, surfaces = load_surface_psd()
+    psds = load_mass_psd()
     anchors = {
-        name: mass_percentile_diameter_um(scenario_from_surface(name, sizes, surfaces[name]), 90.0)
+        name: mass_percentile_diameter_um(scenario_from_mass_bins(name, psds[name]), 90.0)
         for name in PSD_CLASSES
     }
     nearest_name, nearest_d90 = min(
@@ -369,7 +386,7 @@ def interpolated_scenario_for_d90(target_d90_um: float) -> tuple[Scenario, dict[
         key=lambda item: abs(item[1] - target_d90_um),
     )
     if abs(nearest_d90 - target_d90_um) <= 0.5:
-        scenario = scenario_from_surface(nearest_name, sizes, surfaces[nearest_name])
+        scenario = scenario_from_mass_bins(nearest_name, psds[nearest_name])
         return scenario, {
             "target_D90_um": target_d90_um,
             "actual_coarsened_D90_um": mass_percentile_diameter_um(scenario, 90.0),
@@ -378,13 +395,9 @@ def interpolated_scenario_for_d90(target_d90_um: float) -> tuple[Scenario, dict[
             "upper_anchor_weight": 0.0,
         }
     lower, upper = bracketing_anchors(target_d90_um, anchors)
-    weight = solve_weight_for_coarsened_d90(sizes, surfaces[lower], surfaces[upper], target_d90_um)
-    surface = [
-        (1.0 - weight) * low + weight * high
-        for low, high in zip(surfaces[lower], surfaces[upper])
-    ]
-    surface = normalize(surface)
-    scenario = scenario_from_surface(f"D90_{target_d90_um:.0f}um", sizes, surface)
+    weight = solve_weight_for_coarsened_d90(psds[lower], psds[upper], target_d90_um)
+    mass_bins = interpolate_mass_psd(psds[lower], psds[upper], weight)
+    scenario = scenario_from_mass_bins(f"D90_{target_d90_um:.0f}um", mass_bins)
     actual_d90 = mass_percentile_diameter_um(scenario, 90.0)
     return scenario, {
         "target_D90_um": target_d90_um,
@@ -404,9 +417,8 @@ def bracketing_anchors(target_d90_um: float, anchors: dict[str, float]) -> tuple
 
 
 def solve_weight_for_coarsened_d90(
-    sizes: list[float],
-    lower_surface: list[float],
-    upper_surface: list[float],
+    lower_bins: list[tuple[float, float]],
+    upper_bins: list[tuple[float, float]],
     target_d90_um: float,
 ) -> float:
     lo = 0.0
@@ -415,10 +427,7 @@ def solve_weight_for_coarsened_d90(
     best_error = float("inf")
     for _ in range(36):
         mid = 0.5 * (lo + hi)
-        surface = normalize(
-            [(1.0 - mid) * low + mid * high for low, high in zip(lower_surface, upper_surface)]
-        )
-        scenario = scenario_from_surface("candidate", sizes, surface)
+        scenario = scenario_from_mass_bins("candidate", interpolate_mass_psd(lower_bins, upper_bins, mid))
         d90 = mass_percentile_diameter_um(scenario, 90.0)
         error = abs(d90 - target_d90_um)
         if error < best_error:
@@ -431,6 +440,25 @@ def solve_weight_for_coarsened_d90(
         else:
             hi = mid
     return best_weight
+
+
+def interpolate_mass_psd(
+    lower_bins: list[tuple[float, float]],
+    upper_bins: list[tuple[float, float]],
+    weight: float,
+) -> list[tuple[float, float]]:
+    if len(lower_bins) != len(upper_bins):
+        raise ValueError("Measured PSD anchors must have the same number of coarsened classes.")
+    bins = []
+    for (lower_diameter, lower_fraction), (upper_diameter, upper_fraction) in zip(lower_bins, upper_bins):
+        diameter = math.exp(
+            (1.0 - weight) * math.log(lower_diameter)
+            + weight * math.log(upper_diameter)
+        )
+        fraction = (1.0 - weight) * lower_fraction + weight * upper_fraction
+        bins.append((diameter, fraction))
+    total = sum(fraction for _, fraction in bins)
+    return [(diameter, fraction / total) for diameter, fraction in bins]
 
 
 def selected_time_series(series: list[dict[str, float | str]]) -> list[dict[str, float]]:

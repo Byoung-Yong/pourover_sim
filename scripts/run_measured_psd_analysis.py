@@ -1,10 +1,8 @@
-"""Run baseline simulations using measured surface-area PSD data.
+"""Run baseline simulations using measured volume-PSD data.
 
-The input file ``data/PSD.csv`` contains surface-area relative-bin
-distributions for fine, medium, and coarse grind classes. The solver assigns
-extractable solids by coffee mass, so surface-area bins are converted to mass
-fractions using the geometric relation mass fraction proportional to
-surface-area fraction times particle diameter.
+The input file ``data/PSD.csv`` contains the data_2 PSD classes as mass-fraction
+bins derived from measured volume PSDs. No surface-area-to-mass conversion is
+applied in this web-service copy.
 """
 
 from __future__ import annotations
@@ -108,18 +106,22 @@ def load_psd_scenario(name: str) -> Scenario:
     with PSD_FILE.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
-            size_um = float(row["size"])
-            surface_fraction = float(row[name])
-            if size_um <= 0.0 or surface_fraction <= 0.0:
+            if str(row["PSD_class"]).strip().lower() != name:
                 continue
-            rows.append((size_um, surface_fraction))
+            size_um = float(row["diameter_um"])
+            mass_fraction = float(row["mass_fraction"])
+            if size_um <= 0.0 or mass_fraction <= 0.0:
+                continue
+            rows.append((size_um, mass_fraction))
     if not rows:
         raise ValueError(f"No positive PSD bins found for {name}.")
 
-    mass_weights = [(size_um, surface_fraction * size_um) for size_um, surface_fraction in rows]
-    total_mass_weight = sum(weight for _, weight in mass_weights)
-    mass_bins = [(size_um, weight / total_mass_weight) for size_um, weight in mass_weights]
-    return Scenario(name=name, particle_classes=coarsen_mass_psd(mass_bins, COARSENED_CLASS_COUNT))
+    total_mass = sum(mass_fraction for _, mass_fraction in rows)
+    classes = tuple(
+        ParticleClass(radius_um=0.5 * size_um, mass_fraction=mass_fraction / total_mass)
+        for size_um, mass_fraction in sorted(rows, key=lambda item: item[0])
+    )
+    return Scenario(name=name, particle_classes=classes)
 
 
 def coarsen_mass_psd(
@@ -209,7 +211,7 @@ def write_summary(rows: list[dict[str, float | str]]) -> None:
         "",
         f"- Input PSD file: `data/PSD.csv`",
         f"- PSD classes: {', '.join(PSD_CLASSES)}",
-        f"- Surface-area bins were converted to mass fractions using mass proportional to surface area times particle diameter.",
+        f"- Volume-PSD bins were used directly as mass fractions; no surface-area conversion was applied.",
         f"- Coarsened classes per PSD: {COARSENED_CLASS_COUNT}",
         f"- Hydraulic effective diameter: mass D{HYDRAULIC_MASS_PERCENTILE:.0f} from the converted mass-fraction PSD",
         f"- Simulation time limit: {PSD_TOTAL_TIME_S:.0f} s",
