@@ -81,6 +81,39 @@
             <article class="metric"><span>Bed height</span><strong id="bedHeight">--</strong></article>
           </div>
 
+          <div class="cup-summary" id="brewVisual" data-state="idle" aria-label="V60 brewer and cup accumulation schematic">
+            <div class="beaker-readout">
+              <svg class="beaker-cup" viewBox="0 0 180 250" role="img" aria-label="V60 brewer above cup">
+                <defs>
+                  <linearGradient id="beakerCoffee" x1="0" x2="0" y1="1" y2="0">
+                    <stop offset="0%" stop-color="#b9804a" stop-opacity="0.9" />
+                    <stop offset="100%" stop-color="#d8a56f" stop-opacity="0.7" />
+                  </linearGradient>
+                  <linearGradient id="beakerGlass" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#f8fbff" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#d7eef8" stop-opacity="0.7" />
+                  </linearGradient>
+                </defs>
+                <path class="v60-paper" d="M25 28 L155 28 L112 114 L68 114 Z" />
+                <ellipse class="v60-rim" cx="90" cy="28" rx="65" ry="10" />
+                <path class="v60-bed" d="M42 50 L138 50 L108 112 L72 112 Z" />
+                <path class="v60-ribs" d="M56 50 L70 112 M74 39 L80 112 M92 38 L92 112 M110 39 L104 112 M128 50 L110 112" />
+                <path class="v60-tip" d="M82 114 Q90 146 98 114 Z" />
+                <path id="dripStream" class="coffee-stream" d="M90 128 L90 160" opacity="0" />
+                <g>
+                  <path id="cupFill" class="beaker-fill" d="M46 196 L138 196 L129 236 Q127 244 116 244 L68 244 Q57 244 55 236 Z" />
+                  <path class="beaker-glass" d="M42 168 L142 168 L132 236 Q130 244 116 244 L68 244 Q56 244 54 236 Z" />
+                  <path class="beaker-handle" d="M141 182 L166 182 Q177 182 177 198 L177 206 Q177 222 166 222 L136 222" />
+                  <path class="beaker-graduations" d="M58 186 L92 186 M58 204 L92 204 M58 222 L86 222" />
+                </g>
+              </svg>
+              <div class="beaker-text">
+                <span id="visualPhase">Cup accumulation</span>
+                <strong id="visualTime">0.0 g</strong>
+              </div>
+            </div>
+          </div>
+
           <div class="diagnostics">
             <span id="waterCheck">Water balance: --</span>
             <span id="solidsCheck">Solids balance: --</span>

@@ -28,9 +28,9 @@ select {
 }
 
 .app {
-  width: min(1280px, calc(100vw - 32px));
+  width: min(1464px, calc(100vw - 28px));
   margin: 0 auto;
-  padding: 24px 0;
+  padding: 32px 0;
 }
 
 .topbar {
@@ -86,8 +86,8 @@ button.icon-button {
 
 .workspace {
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 540px minmax(0, 1fr);
+  gap: 24px;
 }
 
 .controls,
@@ -100,7 +100,7 @@ button.icon-button {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 16px;
+  padding: 24px;
 }
 
 .control-section + .control-section {
@@ -199,36 +199,153 @@ input[type="range"] {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 12px;
 }
 
 .metric {
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
-  min-height: 72px;
+  padding: 16px;
+  min-height: 108px;
   background: #fbfdff;
 }
 
 .metric span {
   display: block;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 20px;
   font-weight: 700;
 }
 
 .metric strong {
   display: block;
+  margin-top: 22px;
+  font-size: 30px;
+}
+
+.cup-summary {
+  display: grid;
+  justify-items: center;
+  margin: 28px 0 20px;
+  padding: 0;
+}
+
+.beaker-readout {
+  display: grid;
+  grid-template-columns: 260px 280px;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 590px;
+  padding: 0 14px 4px;
+  background: #ffffff;
+}
+
+.beaker-cup {
+  display: block;
+  width: 240px;
+  height: 320px;
+  flex: 0 0 auto;
+}
+
+.v60-paper {
+  fill: rgba(255, 255, 255, 0.8);
+  stroke: #718393;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.v60-rim {
+  fill: rgba(255, 255, 255, 0.82);
+  stroke: #718393;
+  stroke-width: 3;
+}
+
+.v60-bed {
+  fill: #7a4b26;
+}
+
+.v60-ribs {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1.3;
+}
+
+.v60-tip {
+  fill: rgba(255, 255, 255, 0.75);
+  stroke: #718393;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.coffee-stream {
+  fill: none;
+  stroke: #7a4b26;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 18 10;
+  transition: opacity 120ms linear;
+  animation: coffee-flow 0.65s linear infinite;
+}
+
+.beaker-fill {
+  fill: url("#beakerCoffee");
+  transform: scaleY(0);
+  transform-box: fill-box;
+  transform-origin: bottom;
+  transition: transform 140ms linear;
+}
+
+.beaker-glass {
+  fill: url("#beakerGlass");
+  stroke: #718393;
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.beaker-handle,
+.beaker-graduations {
+  fill: none;
+  stroke: #718393;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.beaker-graduations {
+  stroke-width: 3;
+  opacity: 0.75;
+}
+
+.beaker-text span {
+  display: block;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 28px;
+}
+
+.beaker-text strong {
+  display: block;
   margin-top: 8px;
-  font-size: 22px;
+  font-size: 46px;
+  line-height: 1;
+}
+
+@keyframes coffee-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -28;
+  }
 }
 
 .diagnostics {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 12px 0;
+  margin: 12px 0 18px;
 }
 
 .diagnostics span {
@@ -272,5 +389,15 @@ canvas {
 
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .beaker-readout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    width: 100%;
+  }
+
+  .beaker-text {
+    text-align: center;
   }
 }
