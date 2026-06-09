@@ -200,52 +200,52 @@ input[type="range"] {
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px 12px;
+  gap: 12px;
 }
 
 .metric {
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 16px;
-  min-height: 108px;
+  padding: 12px;
+  min-height: 76px;
   background: #fbfdff;
 }
 
 .metric span {
   display: block;
   color: var(--muted);
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .metric strong {
   display: block;
-  margin-top: 22px;
-  font-size: 30px;
+  margin-top: 10px;
+  font-size: 22px;
 }
 
 .cup-summary {
   display: grid;
   justify-items: center;
-  margin: 28px 0 20px;
+  margin: 14px 0 10px;
   padding: 0;
 }
 
 .beaker-readout {
   display: grid;
-  grid-template-columns: 260px 280px;
+  grid-template-columns: 190px 240px;
   align-items: center;
   justify-content: center;
-  gap: 28px;
-  width: 590px;
+  gap: 22px;
+  width: 470px;
   padding: 0 14px 4px;
   background: #ffffff;
 }
 
 .beaker-cup {
   display: block;
-  width: 240px;
-  height: 320px;
+  width: 180px;
+  height: 250px;
   flex: 0 0 auto;
 }
 
@@ -322,13 +322,13 @@ input[type="range"] {
   display: block;
   color: var(--muted);
   font-weight: 700;
-  font-size: 28px;
+  font-size: 22px;
 }
 
 .beaker-text strong {
   display: block;
   margin-top: 8px;
-  font-size: 46px;
+  font-size: 36px;
   line-height: 1;
 }
 
