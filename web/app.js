@@ -36,8 +36,9 @@ async function init() {
   bindEvents();
   try {
     const response = await fetch("/api/defaults");
-    if (!response.ok) throw new Error("default request failed");
-    state.defaults = await response.json();
+    const defaultsData = await readJsonResponse(response);
+    if (!response.ok || defaultsData.ok === false) throw new Error(defaultsData.error || "default request failed");
+    state.defaults = defaultsData;
     applyDefaults(state.defaults);
     setStatus("Ready.");
     drawEmptyChart();
@@ -125,7 +126,7 @@ async function runSimulation() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(buildPayload()),
     });
-    const data = await response.json();
+    const data = await readJsonResponse(response);
     if (!response.ok || !data.ok) throw new Error(data.error || "Simulation failed.");
     state.lastResult = data;
     renderResult(data);
@@ -134,6 +135,16 @@ async function runSimulation() {
     setStatus(error.message, true);
   } finally {
     elements.runButton.disabled = false;
+  }
+}
+
+async function readJsonResponse(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    const preview = text.trim().slice(0, 220) || "empty response";
+    throw new Error(`API returned non-JSON response (${response.status}). ${preview}`);
   }
 }
 
