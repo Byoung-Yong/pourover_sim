@@ -10,6 +10,10 @@
       "destination": "/web/index.html"
     },
     {
+      "source": "/assets/:path*",
+      "destination": "/web/assets/:path*"
+    },
+    {
       "source": "/app.js",
       "destination": "/web/app.js"
     },
