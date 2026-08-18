@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f2eee7" />
+    <title>Filter Coffee Process Simulator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="title-block">
+          <div class="brand-line" aria-hidden="true">
+            <span class="brand-mark"></span>
+            <span>FILTER / PROCESS</span>
+          </div>
+          <p class="eyebrow">Mass-conserving porous-bed simulator</p>
+          <h1>Filter Coffee <span>Process Simulator</span></h1>
+        </div>
+        <button id="runButton" class="run-button" type="button">
+          <span class="run-dot" aria-hidden="true"></span>
+          <span>Run simulation</span>
+        </button>
+      </header>
+
+      <section class="workspace">
+        <form id="controls" class="controls" autocomplete="off">
+          <section class="control-section">
+            <div class="section-kicker">01 / Recipe</div>
+            <h2>Recipe Inputs</h2>
+            <label>
+              Grind size, mass-fraction D90
+              <div class="range-row">
+                <input id="d90" type="range" min="592" max="1815" step="1" value="1010" />
+                <output id="d90Value">1010 um</output>
+              </div>
+              <span id="grindLanguage" class="grind-language">medium</span>
+            </label>
+            <label>
+              Coffee dose (g)
+              <input id="coffeeDose" type="number" min="5" max="80" step="0.5" value="20" />
+            </label>
+            <label>
+              Brewer geometry
+              <select id="geometry">
+                <option value="v60" selected>V60 conical</option>
+                <option value="kalita_disabled" disabled>Kalita 185 (disabled)</option>
+              </select>
+            </label>
+            <label>
+              Numerical grid
+              <select id="grid">
+                <option value="fast" selected>fast 16 x 4</option>
+                <option value="standard">standard 24 x 6</option>
+                <option value="fine">fine 48 x 12</option>
+              </select>
+            </label>
+            <label>
+              Simulation end (s)
+              <input id="simulationEnd" type="number" min="180" max="1800" step="10" value="300" />
+            </label>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <div>
+                <div class="section-kicker">02 / Water</div>
+                <h2>Pour Schedule</h2>
+              </div>
+              <button id="addPour" class="secondary" type="button">+ Add pour</button>
+            </div>
+            <div id="pourRows" class="pour-rows"></div>
+            <div class="schedule-total">
+              <span>Total water</span>
+              <strong id="totalWater">300 g</strong>
+            </div>
+          </section>
+        </form>
+
+        <section class="results">
+          <div class="status-row">
+            <div>
+              <div class="section-kicker">03 / Output</div>
+              <h2>Simulation Output</h2>
+            </div>
+            <p id="status"><span class="status-dot" aria-hidden="true"></span><span class="status-copy">Ready.</span></p>
+          </div>
+
+          <div class="brew-stage">
+            <div class="cup-summary" id="brewVisual" data-state="idle" aria-label="Photorealistic pour-over brewing scene with an animated water stream and live simulation status">
+              <div class="brew-scene">
+                <figure class="brew-photo-frame">
+                  <img
+                    id="brewPhoto"
+                    class="brew-photo"
+                    src="assets/brew-server.webp"
+                    alt="Glass pour-over dripper and coffee server used as the source image for the live brewing visualization"
+                    width="1122"
+                    height="1402"
+                    decoding="async"
+                    fetchpriority="high"
+                  />
+                  <canvas
+                    id="brewCanvas"
+                    class="brew-canvas"
+                    width="1122"
+                    height="1402"
+                    aria-hidden="true"
+                  ></canvas>
+                </figure>
+              </div>
+
+              <div class="beaker-text">
+                <div class="live-label"><span class="live-pulse" aria-hidden="true"></span>BREW VISUAL</div>
+                <span id="visualPhase">Cup accumulation</span>
+                <strong id="visualTime">0.0 g</strong>
+                <small id="visualHint">Estimated liquid collected in the server</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric"><span>Cup water</span><strong id="cupWater">--</strong></article>
+            <article class="metric"><span>Bed water</span><strong id="retainedWater">--</strong></article>
+            <article class="metric"><span>Drawdown</span><strong id="drawdown">--</strong></article>
+            <article class="metric"><span>TDS</span><strong id="tds">--</strong></article>
+            <article class="metric"><span>Extraction yield</span><strong id="ey">--</strong></article>
+            <article class="metric"><span>Bed height</span><strong id="bedHeight">--</strong></article>
+          </div>
+
+          <div class="diagnostics">
+            <span id="waterCheck">Water balance: --</span>
+            <span id="solidsCheck">Solids balance: --</span>
+            <span id="cupCheck">Cup &lt;= input: --</span>
+            <span id="nonnegativeCheck">Nonnegative: --</span>
+          </div>
+
+          <div class="chart-heading">
+            <div class="chart-heading-copy">
+              <div class="chart-kicker">Time series</div>
+              <span>Process dynamics</span>
+              <small>Total bed water with mobile and immobile components; extraction yield uses the right axis</small>
+            </div>
+            <div class="chart-scale-note" aria-label="Chart units">
+              <span>Water · g</span>
+              <span>EY · %</span>
+            </div>
+          </div>
+          <div class="chart-legend" aria-label="Chart legend">
+            <span class="chart-legend-item"><i class="chart-legend-line legend-cup"></i>Cup water</span>
+            <span class="chart-legend-item"><i class="chart-legend-line legend-bed"></i>Bed water</span>
+            <span class="chart-legend-item chart-legend-secondary"><i class="chart-legend-line legend-mobile"></i>Mobile pore</span>
+            <span class="chart-legend-item chart-legend-secondary"><i class="chart-legend-line legend-immobile"></i>Immobile retained</span>
+            <span class="chart-legend-item"><i class="chart-legend-line legend-pool"></i>Pooled</span>
+            <span class="chart-legend-item"><i class="chart-legend-line legend-ey"></i>Extraction yield</span>
+            <span class="chart-legend-item chart-legend-pour"><i class="chart-legend-pattern"></i>Pour window</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas
+              id="chart"
+              width="980"
+              height="460"
+              tabindex="0"
+              aria-label="Simulation time series chart showing cup water, total bed water, mobile pore water, immobile retained water, pooled water, and extraction yield"
+            ></canvas>
+            <div id="chartTooltip" class="chart-tooltip" role="status" aria-hidden="true"></div>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer-note">
+        <span>V60 process model</span>
+        <span>Mass-conserving porous-bed simulation</span>
+      </footer>
+    </main>
+
+    <template id="pourTemplate">
+      <div class="pour-row">
+        <label>Start (s)<input class="pour-start" type="number" min="0" max="1800" step="1" /></label>
+        <label>End (s)<input class="pour-end" type="number" min="1" max="1800" step="1" /></label>
+        <label>Water (g)<input class="pour-water" type="number" min="0" max="2000" step="1" /></label>
+        <button class="icon-button remove-pour" type="button" title="Remove pour" aria-label="Remove pour">×</button>
+      </div>
+    </template>
+    <script src="app.js"></script>
+  </body>
+</html>

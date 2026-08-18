@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Filter Coffee Process Simulator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Mass-conserving porous-bed simulator</p>
+          <h1>Filter Coffee Process Simulator</h1>
+        </div>
+        <button id="runButton" type="button">Run simulation</button>
+      </header>
+
+      <section class="workspace">
+        <form id="controls" class="controls" autocomplete="off">
+          <section class="control-section">
+            <h2>Recipe Inputs</h2>
+            <label>
+              Grind size, mass-fraction D90
+              <div class="range-row">
+                <input id="d90" type="range" min="824" max="1587" step="1" value="1170" />
+                <output id="d90Value">1170 um</output>
+              </div>
+              <span id="grindLanguage" class="grind-language">medium</span>
+            </label>
+            <label>
+              Coffee dose (g)
+              <input id="coffeeDose" type="number" min="5" max="80" step="0.5" value="20" />
+            </label>
+            <label>
+              Brewer geometry
+              <select id="geometry">
+                <option value="v60" selected>V60 conical</option>
+                <option value="kalita_disabled" disabled>Kalita 185 (disabled)</option>
+              </select>
+            </label>
+            <label>
+              Numerical grid
+              <select id="grid">
+                <option value="fast" selected>fast 16 x 4</option>
+                <option value="standard">standard 24 x 6</option>
+                <option value="fine">fine 48 x 12</option>
+              </select>
+            </label>
+            <label>
+              Simulation end (s)
+              <input id="simulationEnd" type="number" min="180" max="1800" step="10" value="300" />
+            </label>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <h2>Pour Schedule</h2>
+              <button id="addPour" class="secondary" type="button">Add pour</button>
+            </div>
+            <div id="pourRows" class="pour-rows"></div>
+            <div class="schedule-total">
+              <span>Total water</span>
+              <strong id="totalWater">300 g</strong>
+            </div>
+          </section>
+        </form>
+
+        <section class="results">
+          <div class="status-row">
+            <h2>Simulation Output</h2>
+            <p id="status">Ready.</p>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric"><span>Cup water</span><strong id="cupWater">--</strong></article>
+            <article class="metric"><span>Retained water</span><strong id="retainedWater">--</strong></article>
+            <article class="metric"><span>Drawdown</span><strong id="drawdown">--</strong></article>
+            <article class="metric"><span>TDS</span><strong id="tds">--</strong></article>
+            <article class="metric"><span>Extraction yield</span><strong id="ey">--</strong></article>
+            <article class="metric"><span>Bed height</span><strong id="bedHeight">--</strong></article>
+          </div>
+
+          <div class="diagnostics">
+            <span id="waterCheck">Water balance: --</span>
+            <span id="solidsCheck">Solids balance: --</span>
+            <span id="cupCheck">Cup <= input: --</span>
+            <span id="nonnegativeCheck">Nonnegative: --</span>
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="chart" width="980" height="460" aria-label="Simulation time series"></canvas>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="pourTemplate">
+      <div class="pour-row">
+        <label>Start (s)<input class="pour-start" type="number" min="0" max="1800" step="1" /></label>
+        <label>End (s)<input class="pour-end" type="number" min="1" max="1800" step="1" /></label>
+        <label>Water (g)<input class="pour-water" type="number" min="0" max="2000" step="1" /></label>
+        <button class="icon-button remove-pour" type="button" title="Remove pour">x</button>
+      </div>
+    </template>
+    <script src="app.js"></script>
+  </body>
+</html>
