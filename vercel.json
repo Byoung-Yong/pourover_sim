@@ -10,6 +10,14 @@
       "destination": "/web/index.html"
     },
     {
+      "source": "/favicon.ico",
+      "destination": "/web/assets/favicon.ico"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "/web/assets/apple-touch-icon.png"
+    },
+    {
       "source": "/assets/:path*",
       "destination": "/web/assets/:path*"
     },

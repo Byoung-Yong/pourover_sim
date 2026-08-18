@@ -4,3 +4,6 @@
 - The photograph is used as the primary brew visual. A transparent Canvas 2D overlay adds subtle water-stream highlights, coffee droplets, bed response, and steam tied to the existing simulation state; it does not redraw the server or add a kettle.
 - The simulator inputs, API behavior, numerical model, and result calculations are unchanged.
 - Design and frontend refinement guidance: OpenAI `Impeccable` skill.
+
+## Favicon
+The favicon artwork is an original project asset created for this simulator. It uses the existing espresso, cream, and amber interface palette and does not incorporate external artwork.
